@@ -36,7 +36,7 @@
 
     [textFieldDatePicker setDropDownMode:IQDropDownModeDatePicker];
     
-    [textFieldTimePicker setDropDownMode:IQDropDownModeTimePicker];
+    [textFieldTimePicker setDropDownMode:IQDropDownModeDateTimePicker];
 	// Do any additional setup after loading the view, typically from a nib.
 }
 

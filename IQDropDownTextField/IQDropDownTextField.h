@@ -43,6 +43,8 @@ typedef NS_ENUM(NSInteger, IQDropDownMode) {
     IQDropDownModeTimePicker,
     
     IQDropDownModeDatePicker,
+    
+    IQDropDownModeDateTimePicker,
 };
 
 @class IQDropDownTextField;
