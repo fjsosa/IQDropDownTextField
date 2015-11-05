@@ -135,6 +135,7 @@
     return _ItemListsInternal.count;
 }
 
+
 #pragma mark UIPickerView delegate
 
 - (UIView *)pickerView:(UIPickerView *)pickerView viewForRow:(NSInteger)row forComponent:(NSInteger)component reusingView:(UIView *)view
@@ -151,6 +152,25 @@
     }
     else
     {
+        /* WORKAROUND  FSO
+         * We need to find a point to select the default option to the control, if we select the default opcion
+         * before the picker view is showed, the textbox will show that opcion as default, and we need the field empty
+         * until the user pick the control. Once the user picked the control, the pickerview is showed
+         * with a default value. and the textbox should reflect that selection.
+         * Rememeber that this control is not a picker view, is a textbox that contains a picker view.
+         * and the picker view is a sub control, as the pickerview control does not have any method or event
+         * that allow notify us when that control is loaded (in fact, there are serveral methods in UIView, but we
+         * need a sub class, and this change implies a big change in the pod control.
+         *
+         * The only point I found to set the default values when the pickerview is showed is this one. but this
+         * method is run for each row in the picker view, this is the reason for the first validation in the "if"
+         * statement, just to avoid reset the selected item in each method call.
+         */
+        if(self.selectedItem == nil && _ItemListsInternal.count > 0)
+        {
+            [self setSelectedItem:_ItemListsInternal[0]];
+        }
+        
         labelText.font = [UIFont boldSystemFontOfSize:20.0];
         labelText.textColor = [UIColor blackColor];
     }
@@ -185,7 +205,7 @@
 {
     if (self.isOptionalDropDown)
     {
-        return [self.pickerView selectedRowInComponent:0]-1;
+        return [self.pickerView selectedRowInComponent:0] - 1;
     }
     else
     {
@@ -247,10 +267,6 @@
     //Refreshing pickerView
     [self setIsOptionalDropDown:_isOptionalDropDown];
     
-    if ([self.text length] == 0)
-    {
-        [self setSelectedRow:0 animated:NO];
-    }
 }
 
 -(NSDate *)date
@@ -359,7 +375,7 @@
             {
                 _selectedItem = selectedItem;
                 self.text = selectedItem;
-                [self.datePicker setDate:date animated:animated];
+                [self.dateTimePicker setDate:date animated:animated];
                 
                 if ([self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
                     [self.delegate textField:self didSelectItem:_selectedItem];
@@ -396,7 +412,7 @@
     if (_dropDownMode == IQDropDownModeDatePicker || _dropDownMode == IQDropDownModeDateTimePicker)
     {
         _datePickerMode = datePickerMode;
-        [self.datePicker setDatePickerMode:datePickerMode];
+        
         
         switch (datePickerMode) {
             case UIDatePickerModeCountDownTimer:
@@ -404,16 +420,19 @@
                 [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
                 break;
             case UIDatePickerModeDate:
+                [self.datePicker setDatePickerMode:datePickerMode];
                 [self.dropDownDateFormatter setDateStyle:NSDateFormatterShortStyle];
                 [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
                 break;
             case UIDatePickerModeTime:
-                [self.dropDownDateFormatter setDateStyle:NSDateFormatterNoStyle];
-                [self.dropDownDateFormatter setTimeStyle:NSDateFormatterShortStyle];
+                [self.timePicker setDatePickerMode:datePickerMode];
+                [self.dropDownTimeFormatter setDateStyle:NSDateFormatterNoStyle];
+                [self.dropDownTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
                 break;
             case UIDatePickerModeDateAndTime:
-                [self.dropDownDateFormatter setDateStyle:NSDateFormatterMediumStyle];
-                [self.dropDownDateFormatter setTimeStyle:NSDateFormatterShortStyle];
+                [self.dateTimePicker setDatePickerMode:datePickerMode];
+                [self.dropDownDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
+                [self.dropDownDateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
                 break;
         }
     }
@@ -425,6 +444,7 @@
     
     self.datePicker.minimumDate = minimumDate;
     self.timePicker.minimumDate = minimumDate;
+    self.dateTimePicker.minimumDate = minimumDate;
 }
 
 -(void)setMaximumDate:(NSDate *)maximumDate
@@ -433,6 +453,7 @@
     
     self.datePicker.maximumDate = maximumDate;
     self.timePicker.maximumDate = maximumDate;
+    self.dateTimePicker.maximumDate = maximumDate;
 }
 
 -(void)setIsOptionalDropDown:(BOOL)isOptionalDropDown
