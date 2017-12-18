@@ -1,7 +1,7 @@
 //
 //  IQDropDownTextField.h
 // https://github.com/hackiftekhar/IQDropDownTextField
-// Copyright (c) 2013-14 Iftekhar Qurashi.
+// Copyright (c) 2013-15 Iftekhar Qurashi.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,221 +24,270 @@
 
 #import <UIKit/UIKit.h>
 
-/*!
-    @enum IQDropDownMode
- 
-    @abstract Drop Down Mode settings.
- 
-    @const IQDropDownModeTextPicker   Show pickerView with provided text data.
- 
-    @const IQDropDownModeTimePicker   Show UIDatePicker to pick time.
- 
-    @const IQDropDownModeDatePicker   Show UIDatePicker to pick date.
- */
+/**
+ Drop Down Mode settings.
 
+ `IQDropDownModeTextPicker`
+ Show pickerView with provided text data.
+ 
+ `IQDropDownModeTimePicker`
+ Show UIDatePicker to pick time.
+ 
+ `IQDropDownModeDatePicker`
+ Show UIDatePicker to pick date.
+ */
 typedef NS_ENUM(NSInteger, IQDropDownMode) {
-    
     IQDropDownModeTextPicker,
-    
     IQDropDownModeTimePicker,
-    
     IQDropDownModeDatePicker,
+<<<<<<< HEAD
     
     IQDropDownModeDateTimePicker,
+=======
+    IQDropDownModeDateTimePicker,
+    IQDropDownModeTextField
 };
+
+typedef NS_ENUM(NSInteger, IQProposedSelection) {
+    IQProposedSelectionBoth,
+    IQProposedSelectionAbove,
+    IQProposedSelectionBelow
+>>>>>>> upstream/master
+};
+
+
+/**
+ Integer constant to use with `selectedRow` property, this will select `Select` option in optional textField.
+ */
+extern NSInteger const IQOptionalTextFieldIndex;
+
 
 @class IQDropDownTextField;
 
-/*!
-    @protocol   IQDropDownTextFieldDelegate
- 
-    @abstract   Drop down text field delegate.
+/**
+ Drop down text field delegate.
  */
 @protocol IQDropDownTextFieldDelegate <UITextFieldDelegate>
 
 @optional
--(void)textField:(IQDropDownTextField*)textField didSelectItem:(NSString*)item; //Called when textField changes it's selected item.
+-(void)textField:(nonnull IQDropDownTextField*)textField didSelectItem:(nullable NSString*)item; //Called when textField changes it's selected item. Supported for IQDropDownModeTextPicker
+
+-(void)textField:(nonnull IQDropDownTextField*)textField didSelectDate:(nullable NSDate*)date; //Called when textField changes it's selected item. Supported for IQDropDownModeTimePicker, IQDropDownModeDatePicker, IQDropDownModeDateTimePicker
 
 @end
 
 
-/*!
-    @author     Iftekhar Qurashi
- 
-	@related    hack.iftekhar@gmail.com
- 
-    @class      IQDropDownTextField
- 
-	@abstract   Add a UIPickerView as inputView
+/**
+ Drop down text field data source. This is only valid for IQDropDownModeTextField mode
+ */
+@protocol IQDropDownTextFieldDataSource <NSObject>
+
+@optional
+-(BOOL)textField:(nonnull IQDropDownTextField*)textField canSelectItem:(nonnull NSString*)item;    //Check if an item can be selected by dropdown texField.
+-(IQProposedSelection)textField:(nonnull IQDropDownTextField*)textField proposedSelectionModeForItem:(nonnull NSString*)item;    //If canSelectItem return NO, then textField:proposedSelectionModeForItem: asked for propsed selection mode.
+//IQProposedSelectionAbove: pickerView find the nearest items above the deselected item that can be selected and then selecting that row.
+//IQProposedSelectionBelow: pickerView find the nearest items below the deselected item that can be selected and then selecting that row.
+//IQProposedSelectionBoth: pickerView find the nearest items that can be selected above or below the deselected item and then selecting that row.
+
+@end
+
+
+/**
+ Add a UIPickerView as inputView
  */
 @interface IQDropDownTextField : UITextField
 
-@property(nonatomic,assign) id<IQDropDownTextFieldDelegate> delegate;             // default is nil. weak reference
+/**
+ This is picker object which internaly used for showing list. Changing some properties might not work properly so do it at your own risk.
+ */
+@property (nonnull, nonatomic, readonly) UIPickerView *pickerView;
 
-/*!
-    @property   dropDownMode
- 
-    @abstract   DropDownMode style to show in picker. Default is IQDropDownModeTextPicker.
+@property(nullable, nonatomic,weak) IBOutlet id<IQDropDownTextFieldDelegate> delegate;             // default is nil. weak reference
+@property(nullable, nonatomic,weak) IBOutlet id<IQDropDownTextFieldDataSource> dataSource;             // default is nil. weak reference
+
+/**
+ If YES then a toolbar will be added at the top to dismiss textfield, if NO then toolbar will be removed. Default to NO.
+ */
+@property (nonatomic, assign) BOOL showDismissToolbar;
+
+/**
+ DropDownMode style to show in picker. Default is IQDropDownModeTextPicker.
  */
 @property (nonatomic, assign) IQDropDownMode dropDownMode;
 
-
-
-/*******************************************/
-
-
-//  Title Selection
-
-/*!
-    @property   selectedItem
- 
-    @abstract   Selected item of pickerView.
+/**
+ Label for the optional iten if isOptionalDropDown is YES. Default is Select.
  */
-@property (nonatomic, strong) NSString *selectedItem;
+@property (nullable, nonatomic, copy) IBInspectable NSString *optionalItemText;
 
-/*!
-    @method     setSelectedItem:animated
- 
-    @abstract   Set selected item of pickerView.
+/**
+ If YES then it will add a optionalItemLabel item at top of dropDown list. If NO then first field will automatically be selected. Default is YES
  */
-- (void)setSelectedItem:(NSString*)selectedItem animated:(BOOL)animated;
+@property (nonatomic, assign) IBInspectable BOOL isOptionalDropDown;
 
-
-
-/*******************************************/
-
-/*-------------------------------------------------------*/
-/******          IQDropDownModeTextPicker           ******/
-/*-------------------------------------------------------*/
-
-/*!
-    @property   itemList
- 
-    @abstract   Items to show in pickerView. Please use [ NSArray of NSString ] format for setter method, For example. @[ @"1", @"2", @"3", ]
+/**
+ Use selectedItem property to get/set dropdown text.
  */
-@property (nonatomic, strong) NSArray *itemList;
+@property(nullable, nonatomic,copy)   NSString               *text NS_DEPRECATED_IOS(3_0, 5_0, "Please use selectedItem property to get/set dropdown selected text instead");
 
-/*!
-    @property   isOptionalDropDown
- 
- @abstract   If YES then it will add a 'Select' item at top of dropDown list. If NO then first field will automatically be selected. Default is YES
+/**
+ attributedText is unavailable in IQDropDownTextField.
  */
-@property (nonatomic, assign) BOOL isOptionalDropDown;
+@property(nullable, nonatomic,copy)   NSAttributedString     *attributedText NS_UNAVAILABLE;
 
-/*!
-    @property   selectedRow
- 
-    @abstract   Selected row index of selected item.
+/**
+ Sets a custom font for the IQDropdownTextField items. Default is boldSystemFontOfSize:18.0.
+ */
+@property (nullable, strong, nonatomic) UIFont *dropDownFont;
+
+/**
+ Sets a custom color for the IQDropdownTextField items. Default is blackColor.
+ */
+@property (nullable, strong, nonatomic) UIColor *dropDownTextColor;
+
+/**
+ Sets a custom color for the optional item. Default is lightGrayColor.
+ */
+@property (nullable, strong, nonatomic) UIColor *optionalItemTextColor;
+
+
+///----------------------
+/// @name Title Selection
+///----------------------
+
+/**
+ Selected item of pickerView.
+ */
+@property (nullable, nonatomic, copy) NSString *selectedItem;
+
+/**
+ Set selected item of pickerView.
+ */
+- (void)setSelectedItem:(nullable NSString*)selectedItem animated:(BOOL)animated;
+
+
+///-------------------------------
+/// @name IQDropDownModeTextPicker
+///-------------------------------
+
+/**
+ Items to show in pickerView. For example. @[ @"1", @"2", @"3" ]. This field must be set.
+ */
+@property (nullable, nonatomic, copy) NSArray <NSString*> *itemList;
+
+/**
+ UIView items to show in pickerView. For example. @[ view1, view2, view3 ]. If itemList text needs to be shown then pass [NSNull null] instead of UIView object at appropriate index. This field is optional.
+ */
+@property (nullable, nonatomic, copy) NSArray <__kindof NSObject*> *itemListView;
+
+/**
+ If this is set then we'll show textfield's text from this list instead from regular itemList. This is only for showing different messaging in textfield's text. This itemListUI array count must be equal to itemList array count.
+ */
+@property (nullable, nonatomic, copy) NSArray <NSString*> *itemListUI;
+
+/**
+ Selected row index of selected item.
  */
 @property (nonatomic, assign) NSInteger selectedRow;
 
-/*!
-    @method     setSelectedRow:animated
- 
-    @abstract   Select row index of selected item.
+/**
+ Defines Picker labels fontSizeAdjustment by width. Default is NO
+ */
+@property (nonatomic, assign) IBInspectable BOOL adjustPickerLabelFontSizeWidth;
+
+/**
+ Select row index of selected item.
  */
 - (void)setSelectedRow:(NSInteger)row animated:(BOOL)animated;
 
+@end
 
 
-/*-------------------------------------------------------*/
-/*** IQdropDownModeDatePicker/IQDropDownModeTimePicker ***/
-/*-------------------------------------------------------*/
 
-/*!
-    @property   date
- 
-    @abstract   Selected date in UIDatePicker.
+@interface IQDropDownTextField (DateTime)
+
+/**
+ These are the picker object which internaly used for showing list. Changing some properties might not work properly so do it at your own risk.
  */
-@property(nonatomic, strong) NSDate *date;
+@property (nonnull, nonatomic, readonly) UIDatePicker *datePicker;
+@property (nonnull, nonatomic, readonly) UIDatePicker *timePicker;
+@property (nonnull, nonatomic, readonly) UIDatePicker *dateTimePicker;
 
-/*!
-    @method     setDate:animated
- 
-    @abstract   Select date in UIDatePicker.
+
+///--------------------------------------------------------
+/// @name IQdropDownModeDatePicker/IQDropDownModeTimePicker
+///*-------------------------------------------------------
+
+/**
+ Selected date in UIDatePicker.
  */
-- (void)setDate:(NSDate *)date animated:(BOOL)animated;
+@property(nullable, nonatomic, copy) NSDate *date;
 
-/*!
-    @property   dateComponents
- 
-    @abstract   DateComponents for date picker.
+/**
+ Select date in UIDatePicker.
  */
-@property (nonatomic, readonly, copy) NSDateComponents *dateComponents;
+- (void)setDate:(nullable NSDate *)date animated:(BOOL)animated;
 
-/*!
-    @property   year
- 
-    @property   month
- 
-    @property   day
- 
-    @property   hour
- 
-    @property   minute
- 
-    @property   second
- 
-    @abstract   date component individual values.
+/**
+ DateComponents for date picker.
+ */
+@property (nullable, nonatomic, readonly, copy) NSDateComponents *dateComponents;
+
+/**
+ year
  */
 @property (nonatomic, readonly) NSInteger year;
 
+/**
+ month
+ */
 @property (nonatomic, readonly) NSInteger month;
 
+/**
+ day
+ */
 @property (nonatomic, readonly) NSInteger day;
 
+/**
+ hour
+ */
 @property (nonatomic, readonly) NSInteger hour;
 
+/**
+ minute
+ */
 @property (nonatomic, readonly) NSInteger minute;
 
+/**
+ second
+ */
 @property (nonatomic, readonly) NSInteger second;
 
 
+///-------------------------------
+/// @name IQdropDownModeDatePicker
+///-------------------------------
 
-/*-------------------------------------------------------*/
-/******          IQdropDownModeDatePicker           ******/
-/*-------------------------------------------------------*/
-
-/*!
-    @property   datePickerMode
- 
-    @abstract   Select date in UIDatePicker. Default is UIDatePickerModeDate
+/**
+ Select date in UIDatePicker. Default is UIDatePickerModeDate
  */
 @property (nonatomic, assign) UIDatePickerMode datePickerMode;
 
-/*!
-    @property   minimumDate
- 
-    @abstract   Minimum selectable date in UIDatePicker. Default is nil.
+/**
+ Date formatter to show date as text in textField.
  */
-@property (nonatomic, retain) NSDate *minimumDate;
+@property (nullable, nonatomic, retain) NSDateFormatter *dateFormatter UI_APPEARANCE_SELECTOR;
 
-/*!
-    @property   maximumDate
- 
-    @abstract   Maximum selectable date in UIDatePicker. Default is nil.
+
+///-------------------------------
+/// @name IQDropDownModeTimePicker
+///-------------------------------
+
+/**
+ Time formatter to show time as text in textField.
  */
-@property (nonatomic, retain) NSDate *maximumDate;
+@property (nullable, nonatomic, retain) NSDateFormatter *timeFormatter UI_APPEARANCE_SELECTOR;
 
-/*!
-    @property   dateFormatter
- 
-    @abstract   Date formatter to show date as text in textField.
- */
-@property (nonatomic, retain) NSDateFormatter *dateFormatter UI_APPEARANCE_SELECTOR;
-
-
-
-/*-------------------------------------------------------*/
-/******          IQDropDownModeTimePicker           ******/
-/*-------------------------------------------------------*/
-
-/*!
- @property   timeFormatter
- 
-    @abstract   Time formatter to show time as text in textField.
- */
-@property (nonatomic, retain) NSDateFormatter *timeFormatter;
-
+@property (nullable, nonatomic, retain) NSDateFormatter *dateTimeFormatter UI_APPEARANCE_SELECTOR;
 
 @end

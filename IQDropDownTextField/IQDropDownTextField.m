@@ -1,7 +1,7 @@
 //
 //  IQDropDownTextField.m
 // https://github.com/hackiftekhar/IQDropDownTextField
-// Copyright (c) 2013-14 Iftekhar Qurashi.
+// Copyright (c) 2013-15 Iftekhar Qurashi.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +23,13 @@
 
 
 #import "IQDropDownTextField.h"
+#import <objc/runtime.h>
+
+NSInteger const IQOptionalTextFieldIndex =  -1;
 
 @interface IQDropDownTextField () <UIPickerViewDelegate, UIPickerViewDataSource>
-{
-    NSArray *_ItemListsInternal;
-}
 
+<<<<<<< HEAD
 @property (nonatomic, strong) UIPickerView *pickerView;
 @property (nonatomic, strong) UIDatePicker *datePicker;
 @property (nonatomic, strong) UIDatePicker *timePicker;
@@ -36,10 +37,56 @@
 @property (nonatomic, strong) NSDateFormatter *dropDownDateFormatter;
 @property (nonatomic, strong) NSDateFormatter *dropDownDateTimeFormatter;
 @property (nonatomic, strong) NSDateFormatter *dropDownTimeFormatter;
+=======
+@property (nonatomic, strong) UIToolbar *dismissToolbar;
+
+@property BOOL hasSetInitialIsOptional;
+>>>>>>> upstream/master
 
 @end
 
+
+@interface IQDropDownTextField (Internal)
+
+@property(nonatomic, strong) NSArray *internalItemList;
+
+-(void)_setSelectedItem:(NSString *)selectedItem animated:(BOOL)animated shouldNotifyDelegate:(BOOL)shouldNotifyDelegate;
+
+@end
+
+
 @implementation IQDropDownTextField
+
+@synthesize dropDownMode = _dropDownMode;
+@synthesize itemList = _itemList;
+@synthesize isOptionalDropDown = _isOptionalDropDown;
+@synthesize optionalItemText = _optionalItemText;
+@synthesize adjustPickerLabelFontSizeWidth = _adjustPickerLabelFontSizeWidth;
+
+@synthesize dropDownFont = _dropDownFont;
+@synthesize dropDownTextColor = _dropDownTextColor;
+@synthesize optionalItemTextColor = _optionalItemTextColor;
+
+@dynamic delegate;
+@dynamic text;
+@dynamic attributedText;
+
+@synthesize pickerView = _pickerView;
+
+#pragma mark - NSObject
+
+- (void)dealloc {
+    [_pickerView setDelegate:nil];
+    [_pickerView setDataSource:nil];
+    _pickerView = nil;
+    self.delegate = nil;
+    _dataSource = nil;
+    _optionalItemText = nil;
+    _itemList = nil;
+    _dropDownFont = nil;
+    _dropDownTextColor = nil;
+    _optionalItemTextColor = nil;
+}
 
 #pragma mark - Initialization
 
@@ -48,18 +95,19 @@
     [self setContentVerticalAlignment:UIControlContentVerticalAlignmentCenter];
     [self setContentHorizontalAlignment:UIControlContentHorizontalAlignmentCenter];
     
-    if ([[[self class] appearance] dateFormatter])
+    if (self.optionalItemText == nil)
     {
-        self.dropDownDateFormatter = [[NSDateFormatter alloc] init];
-        self.dropDownDateFormatter = [[[self class] appearance] dateFormatter];
+        self.optionalItemText = NSLocalizedString(@"Select", nil);
     }
-    else
+    
+    //These will update the UI and other components, all the validation added if awakeFromNib for textField is called after custom UIView awakeFromNib call
     {
-        self.dropDownDateFormatter = [[NSDateFormatter alloc] init];
-        //        [self.dropDownDateFormatter setDateFormat:@"dd MMM yyyy"];
-        [self.dropDownDateFormatter setDateStyle:NSDateFormatterMediumStyle];
-        [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
+        self.dropDownMode = self.dropDownMode;
+
+        self.isOptionalDropDown = self.hasSetInitialIsOptional?self.isOptionalDropDown:YES;
+        self.adjustPickerLabelFontSizeWidth = self.adjustPickerLabelFontSizeWidth;
     }
+<<<<<<< HEAD
     
     self.dropDownDateTimeFormatter = [[NSDateFormatter alloc] init];
     [self.dropDownDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
@@ -94,6 +142,8 @@
     
     [self setDropDownMode:IQDropDownModeTextPicker];
     [self setIsOptionalDropDown:YES];
+=======
+>>>>>>> upstream/master
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -106,21 +156,21 @@
     return self;
 }
 
-- (instancetype)initWithCoder:(NSCoder *)aDecoder
+-(void)awakeFromNib
 {
-    self = [super initWithCoder:aDecoder];
-    if (self)
-    {
-        [self initialize];
-    }
-    return self;
+    [super awakeFromNib];
+    [self initialize];
 }
 
 #pragma mark - UITextField overrides
 
 - (CGRect)caretRectForPosition:(UITextPosition *)position
 {
-    return CGRectZero;
+    if (self.dropDownMode == IQDropDownModeTextField) {
+        return [super caretRectForPosition:position];
+    } else {
+        return CGRectZero;
+    }
 }
 
 #pragma mark - UIPickerView data source
@@ -132,7 +182,7 @@
 
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component
 {
-    return _ItemListsInternal.count;
+    return self.internalItemList.count;
 }
 
 
@@ -140,18 +190,17 @@
 
 - (UIView *)pickerView:(UIPickerView *)pickerView viewForRow:(NSInteger)row forComponent:(NSInteger)component reusingView:(UIView *)view
 {
-    UILabel *labelText = [[UILabel alloc] init];
-    [labelText setTextAlignment:NSTextAlignmentCenter];
-    [labelText setText:_ItemListsInternal[row]];
-    labelText.backgroundColor = [UIColor clearColor];
-    
-    if (self.isOptionalDropDown && row == 0)
+    if (_itemListView.count > row && [_itemListView[row] isKindOfClass:[UIView class]])
     {
-        labelText.font = [UIFont boldSystemFontOfSize:30.0];
-        labelText.textColor = [UIColor lightGrayColor];
+        //Archiving and Unarchiving is necessary to copy UIView instance.
+        NSData *viewData = [NSKeyedArchiver archivedDataWithRootObject:_itemListView[row]];
+        UIView *copyOfView = [NSKeyedUnarchiver unarchiveObjectWithData:viewData];
+        
+        return copyOfView;
     }
     else
     {
+<<<<<<< HEAD
         /* WORKAROUND  FSO
          * We need to find a point to select the default option to the control, if we select the default opcion
          * before the picker view is showed, the textbox will show that opcion as default, and we need the field empty
@@ -173,25 +222,138 @@
         
         labelText.font = [UIFont boldSystemFontOfSize:20.0];
         labelText.textColor = [UIColor blackColor];
+=======
+        UILabel *labelText = (UILabel*)view;
+        
+        if (labelText == nil)
+        {
+            labelText = [[UILabel alloc] init];
+            [labelText setTextAlignment:NSTextAlignmentCenter];
+            [labelText setAdjustsFontSizeToFitWidth:YES];
+            labelText.backgroundColor = [UIColor clearColor];
+            labelText.backgroundColor = [UIColor clearColor];
+        }
+        
+        NSString *text = [self.internalItemList objectAtIndex:row];
+        
+        [labelText setText:text];
+        
+        if (self.isOptionalDropDown && row == 0)
+        {
+            if (_dropDownFont) {
+                if (_dropDownFont.pointSize < 30) {
+                    labelText.font = [_dropDownFont fontWithSize:30];
+                } else {
+                    labelText.font = _dropDownFont;
+                }
+            } else {
+                labelText.font = [UIFont boldSystemFontOfSize:30.0];
+            }
+            labelText.textColor = _optionalItemTextColor ? _optionalItemTextColor : [UIColor lightGrayColor];
+        }
+        else
+        {
+            if (_dropDownFont) {
+                labelText.font = _dropDownFont;
+            } else {
+                labelText.font = [UIFont boldSystemFontOfSize:18.0];
+            }
+            
+            BOOL canSelect = YES;
+            
+            if ([self.dataSource respondsToSelector:@selector(textField:canSelectItem:)])
+            {
+                canSelect = [self.dataSource textField:self canSelectItem:text];
+            }
+            
+            if (canSelect)
+            {
+                if (_dropDownTextColor) {
+                    labelText.textColor = _dropDownTextColor;
+                } else {
+                    labelText.textColor = [UIColor blackColor];
+                }
+            }
+            else
+            {
+                labelText.textColor = [UIColor lightGrayColor];
+            }
+            
+            labelText.adjustsFontSizeToFitWidth = self.adjustPickerLabelFontSizeWidth;
+        }
+        return labelText;
+>>>>>>> upstream/master
     }
-    return labelText;
 }
 
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component
 {
-    [self setSelectedItem:_ItemListsInternal[row]];
-}
-
-#pragma mark - UIDatePicker delegate
-
-- (void)dateChanged:(UIDatePicker *)dPicker
-{
-    [self setSelectedItem:[self.dropDownDateFormatter stringFromDate:dPicker.date]];
-}
-
-- (void)timeChanged:(UIDatePicker *)tPicker
-{
-    [self setSelectedItem:[self.dropDownTimeFormatter stringFromDate:tPicker.date]];
+    NSString *text = [self.internalItemList objectAtIndex:row];
+    
+    BOOL canSelect = YES;
+    
+    if ([self.dataSource respondsToSelector:@selector(textField:canSelectItem:)])
+    {
+        canSelect = [self.dataSource textField:self canSelectItem:text];
+    }
+    
+    if (canSelect)
+    {
+        [self _setSelectedItem:[self.internalItemList objectAtIndex:row] animated:NO shouldNotifyDelegate:YES];
+    }
+    else
+    {
+        IQProposedSelection proposedSelection = IQProposedSelectionBoth;
+        
+        if ([self.dataSource respondsToSelector:@selector(textField:proposedSelectionModeForItem:)])
+        {
+            proposedSelection = [self.dataSource textField:self proposedSelectionModeForItem:text];
+        }
+        
+        NSInteger aboveIndex = row-1;
+        NSInteger belowIndex = row+1;
+        
+        if (proposedSelection == IQProposedSelectionAbove)
+        {
+            belowIndex = self.internalItemList.count;
+        }
+        else if (proposedSelection == IQProposedSelectionBelow)
+        {
+            aboveIndex = -1;
+        }
+        
+        
+        while (aboveIndex >= 0 || belowIndex < self.internalItemList.count)
+        {
+            if (aboveIndex >= 0)
+            {
+                NSString *aboveText = [self.internalItemList objectAtIndex:aboveIndex];
+                
+                if ([self.dataSource textField:self canSelectItem:aboveText])
+                {
+                    [self _setSelectedItem:aboveText animated:YES shouldNotifyDelegate:YES];
+                    return;
+                }
+                
+                aboveIndex--;
+            }
+            
+            if (belowIndex < self.internalItemList.count)
+            {
+                NSString *belowText = [self.internalItemList objectAtIndex:aboveIndex];
+                
+                if ([self.dataSource textField:self canSelectItem:belowText])
+                {
+                    [self _setSelectedItem:belowText animated:YES shouldNotifyDelegate:YES];
+                    return;
+                }
+                
+                belowIndex++;
+            }
+        }
+        
+        return [self setSelectedRow:0 animated:YES];
+    }
 }
 
 - (void)dateTimeChanged:(UIDatePicker *)tPicker
@@ -220,23 +382,57 @@
 
 - (void)setSelectedRow:(NSInteger)row animated:(BOOL)animated
 {
-    if (row < [_ItemListsInternal count])
+    NSInteger count = ([_itemList count] + 1);
+    if (row < count)
     {
-        if (self.isOptionalDropDown && row == 0)
+        if (self.isOptionalDropDown)
         {
-            self.text = @"";
+            if (row == IQOptionalTextFieldIndex)
+            {
+                super.text = @"";
+            }
+            else
+            {
+                super.text = (row == 0) ? @"" : [_itemListUI?:_itemList objectAtIndex:row-1];
+            }
+            [self.pickerView selectRow:row inComponent:0 animated:animated];
         }
         else
         {
-            self.text = _ItemListsInternal[row];
+            super.text = [_itemListUI?:_itemList objectAtIndex:row];
+            [self.pickerView selectRow:row inComponent:0 animated:animated];
         }
-        
-        [self.pickerView selectRow:row inComponent:0 animated:animated];
     }
 }
 
-#pragma mark - Setters
+#pragma mark - Toolbar
 
+-(void)setShowDismissToolbar:(BOOL)showDismissToolbar
+{
+    self.inputAccessoryView = (showDismissToolbar ? self.dismissToolbar : nil);
+}
+
+-(BOOL)showDismissToolbar
+{
+    return (self.inputAccessoryView == _dismissToolbar);
+}
+
+-(UIToolbar *)dismissToolbar
+{
+    if (_dismissToolbar == nil)
+    {
+        _dismissToolbar = [[UIToolbar alloc] init];
+        _dismissToolbar.translucent = YES;
+        [_dismissToolbar sizeToFit];
+        UIBarButtonItem *buttonflexible = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
+        UIBarButtonItem *buttonDone = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(resignFirstResponder)];
+        [_dismissToolbar setItems:@[buttonflexible,buttonDone]];
+    }
+    
+    return _dismissToolbar;
+}
+
+#pragma mark - Setters
 - (void)setDropDownMode:(IQDropDownMode)dropDownMode
 {
     _dropDownMode = dropDownMode;
@@ -244,13 +440,45 @@
     switch (_dropDownMode)
     {
         case IQDropDownModeTextPicker:
+        {
             self.inputView = self.pickerView;
+            [self setSelectedRow:self.selectedRow animated:YES];
+        }
             break;
         case IQDropDownModeDatePicker:
+        {
             self.inputView = self.datePicker;
+            
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.datePicker.date];
+            }
+        }
             break;
         case IQDropDownModeTimePicker:
+        {
             self.inputView = self.timePicker;
+            
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.timePicker.date];
+            }
+        }
+            break;
+        case IQDropDownModeDateTimePicker:
+        {
+            self.inputView = self.dateTimePicker;
+            
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.dateTimePicker.date];
+            }
+        }
+            break;
+        case IQDropDownModeTextField:
+        {
+            self.inputView = nil;
+        }
             break;
         case IQDropDownModeDateTimePicker:
             self.inputView = self.dateTimePicker;
@@ -267,12 +495,76 @@
     //Refreshing pickerView
     [self setIsOptionalDropDown:_isOptionalDropDown];
     
+<<<<<<< HEAD
+=======
+    [self setSelectedRow:self.selectedRow];
 }
 
--(NSDate *)date
+- (NSString*)selectedItem
 {
-    switch (self.dropDownMode)
+    switch (_dropDownMode)
     {
+        case IQDropDownModeTextPicker:
+        {
+            NSInteger selectedRow = -1;
+            if (self.isOptionalDropDown)
+            {
+                selectedRow = [self.pickerView selectedRowInComponent:0]-1;
+            }
+            else
+            {
+                selectedRow = [self.pickerView selectedRowInComponent:0];
+            }
+            
+            if (selectedRow >= 0)
+            {
+                return [_itemList objectAtIndex:selectedRow];
+            }
+            else
+            {
+                return nil;
+            }
+        }
+            break;
+        case IQDropDownModeDatePicker:
+        {
+            return  [super.text length]  ?   [self.dateFormatter stringFromDate:self.datePicker.date]    :   nil;    break;
+        }
+            break;
+        case IQDropDownModeTimePicker:
+        {
+            return  [super.text length]  ?   [self.timeFormatter stringFromDate:self.timePicker.date]    :   nil;    break;
+        }
+            break;
+        case IQDropDownModeDateTimePicker:
+        {
+            return  [super.text length]  ?   [self.dateTimeFormatter stringFromDate:self.dateTimePicker.date]    :   nil;    break;
+        }
+            break;
+        case IQDropDownModeTextField:
+        {
+            return super.text;
+        }
+            break;
+    }
+>>>>>>> upstream/master
+}
+
+-(void)setSelectedItem:(NSString *)selectedItem
+{
+    [self _setSelectedItem:selectedItem animated:NO shouldNotifyDelegate:NO];
+}
+
+-(void)setSelectedItem:(NSString *)selectedItem animated:(BOOL)animated
+{
+    [self _setSelectedItem:selectedItem animated:animated shouldNotifyDelegate:NO];
+}
+
+-(NSString *)optionalItemText
+{
+    if (_optionalItemText.length)
+    {
+<<<<<<< HEAD
         case IQDropDownModeDatePicker:
             return  [self.text length]  ?   self.datePicker.date    :   nil;
             break;
@@ -285,23 +577,83 @@
         default:
             return  nil;
             break;
+=======
+        return _optionalItemText;
+    }
+    else
+    {
+        return NSLocalizedString(@"Select", nil);
+>>>>>>> upstream/master
     }
 }
 
--(void)setDate:(NSDate *)date
+-(void)setOptionalItemText:(NSString *)optionalItemText
 {
-    [self setDate:date animated:NO];
+    _optionalItemText = [optionalItemText copy];
+    
+    [self _updateOptionsList];
 }
 
-- (void)setDate:(NSDate *)date animated:(BOOL)animated
+-(BOOL)adjustPickerLabelFontSizeWidth {
+    return _adjustPickerLabelFontSizeWidth;
+}
+
+-(void)setAdjustPickerLabelFontSizeWidth:(BOOL)adjustPickerLabelFontSizeWidth {
+    _adjustPickerLabelFontSizeWidth = adjustPickerLabelFontSizeWidth;
+    
+    [self _updateOptionsList];
+}
+
+-(void)setIsOptionalDropDown:(BOOL)isOptionalDropDown
 {
+    _isOptionalDropDown = isOptionalDropDown;
+    _hasSetInitialIsOptional = YES;
+    
+    [self _updateOptionsList];
+}
+
+- (void) _updateOptionsList {
+    if (_isOptionalDropDown)
+    {
+        NSArray *array = [NSArray arrayWithObject:self.optionalItemText];
+        self.internalItemList = [array arrayByAddingObjectsFromArray:_itemList];
+    }
+    else
+    {
+        self.internalItemList = [_itemList copy];
+    }
+    
+    [self.pickerView reloadAllComponents];
+
     switch (_dropDownMode)
     {
         case IQDropDownModeDatePicker:
-            [self setSelectedItem:[self.dropDownDateFormatter stringFromDate:date] animated:animated];
+        {
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.datePicker.date];
+            }
+        }
             break;
         case IQDropDownModeTimePicker:
-            [self setSelectedItem:[self.dropDownTimeFormatter stringFromDate:date] animated:animated];
+        {
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.timePicker.date];
+            }
+        }
+            break;
+        case IQDropDownModeDateTimePicker:
+        {
+            if (self.isOptionalDropDown == NO)
+            {
+                [self setDate:self.dateTimePicker.date];
+            }
+        }
+        case IQDropDownModeTextPicker:
+        {
+//            [self setSelectedRow:self.selectedRow];
+        }
             break;
         case IQDropDownModeDateTimePicker:
             [self setSelectedItem:[self.dropDownDateTimeFormatter stringFromDate:date] animated:animated];
@@ -311,18 +663,52 @@
     }
 }
 
-- (void)setDateFormatter:(NSDateFormatter *)userDateFormatter
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender
 {
-    self.dropDownDateFormatter = userDateFormatter;
-    [self.datePicker setLocale:self.dropDownDateFormatter.locale];
+    BOOL isRestrictedAction = (action == @selector(paste:) || action == @selector(cut:));
+    if (isRestrictedAction && self.dropDownMode != IQDropDownModeTextField) {
+        return NO;
+    }
+    
+    return [super canPerformAction:action withSender:sender];
 }
 
-- (void)setTimeFormatter:(NSDateFormatter *)userTimeFormatter
-{
-    self.dropDownTimeFormatter = userTimeFormatter;
-    [self.timePicker setLocale:self.dropDownTimeFormatter.locale];
+#pragma mark - Getter
+
+- (UIPickerView *) pickerView {
+    if (!_pickerView)
+    {
+        _pickerView = [[UIPickerView alloc] init];
+        [_pickerView setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
+        [_pickerView setShowsSelectionIndicator:YES];
+        [_pickerView setDelegate:self];
+        [_pickerView setDataSource:self];
+    }
+    return _pickerView;
 }
 
+@end
+
+
+
+@implementation IQDropDownTextField (DateTime)
+
+- (UIDatePicker *) timePicker
+{
+    UIDatePicker *_timePicker = objc_getAssociatedObject(self, _cmd);
+    if (!_timePicker)
+    {
+        _timePicker = [[UIDatePicker alloc] init];
+        [_timePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
+        [_timePicker setDatePickerMode:UIDatePickerModeTime];
+        [_timePicker addTarget:self action:@selector(timeChanged:) forControlEvents:UIControlEventValueChanged];
+        objc_setAssociatedObject(self, _cmd, _timePicker, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    
+    return _timePicker;
+}
+
+<<<<<<< HEAD
 - (void)setDateTimeFormatter:(NSDateFormatter *)userDateTimeFormatter
 {
     self.dropDownDateTimeFormatter = userDateTimeFormatter;
@@ -330,42 +716,70 @@
 }
 
 -(void)setSelectedItem:(NSString *)selectedItem
+=======
+- (UIDatePicker *) dateTimePicker
+>>>>>>> upstream/master
 {
-    [self setSelectedItem:selectedItem animated:NO];
+    UIDatePicker *_dateTimePicker = objc_getAssociatedObject(self, _cmd);
+    
+    if (!_dateTimePicker)
+    {
+        _dateTimePicker = [[UIDatePicker alloc] init];
+        [_dateTimePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
+        [_dateTimePicker setDatePickerMode:UIDatePickerModeDateAndTime];
+        [_dateTimePicker addTarget:self action:@selector(dateTimeChanged:) forControlEvents:UIControlEventValueChanged];
+        objc_setAssociatedObject(self, _cmd, _dateTimePicker, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return _dateTimePicker;
 }
 
--(void)setSelectedItem:(NSString *)selectedItem animated:(BOOL)animated
+- (UIDatePicker *) datePicker
 {
-    switch (_dropDownMode)
+    UIDatePicker *_datePicker = objc_getAssociatedObject(self, _cmd);
+    
+    if (!_datePicker)
     {
-        case IQDropDownModeTextPicker:
-            if ([_ItemListsInternal containsObject:selectedItem])
-            {
-                _selectedItem = selectedItem;
-                
-                [self setSelectedRow:[_ItemListsInternal indexOfObject:selectedItem] animated:animated];
-                
-                if ([self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
-                    [self.delegate textField:self didSelectItem:_selectedItem];
-            }
-            break;
+        _datePicker = [[UIDatePicker alloc] init];
+        [_datePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
+        [_datePicker setDatePickerMode:UIDatePickerModeDate];
+        [_datePicker addTarget:self action:@selector(dateChanged:) forControlEvents:UIControlEventValueChanged];
+        objc_setAssociatedObject(self, _cmd, _datePicker, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    
+    return _datePicker;
+}
+
+#pragma mark - UIDatePicker delegate
+
+- (void)dateChanged:(UIDatePicker *)dPicker
+{
+    [self _setSelectedItem:[self.dateFormatter stringFromDate:dPicker.date] animated:NO shouldNotifyDelegate:YES];
+}
+
+- (void)timeChanged:(UIDatePicker *)tPicker
+{
+    [self _setSelectedItem:[self.timeFormatter stringFromDate:tPicker.date] animated:NO shouldNotifyDelegate:YES];
+}
+
+- (void)dateTimeChanged:(UIDatePicker *)dtPicker
+{
+    [self _setSelectedItem:[self.dateTimeFormatter stringFromDate:dtPicker.date] animated:NO shouldNotifyDelegate:YES];
+}
+
+-(NSDate *)date
+{
+    switch (self.dropDownMode)
+    {
         case IQDropDownModeDatePicker:
         {
-            NSDate *date = [self.dropDownDateFormatter dateFromString:selectedItem];
-            if (date)
+            if (self.isOptionalDropDown)
             {
-                _selectedItem = selectedItem;
-                self.text = selectedItem;
-                [self.datePicker setDate:date animated:animated];
-                
-                if ([self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
-                    [self.delegate textField:self didSelectItem:_selectedItem];
+                return  [super.text length]  ?   [self.datePicker.date copy]    :   nil;    break;
             }
-            else if ([selectedItem length])
+            else
             {
-                NSLog(@"Invalid date or date format:%@",selectedItem);
+                return [self.datePicker.date copy];
             }
-            break;
         }
             
         case IQDropDownModeDateTimePicker:
@@ -388,38 +802,93 @@
         }
         case IQDropDownModeTimePicker:
         {
-            NSDate *date = [self.dropDownTimeFormatter dateFromString:selectedItem];
-            if (date)
+            if (self.isOptionalDropDown)
             {
-                _selectedItem = selectedItem;
-                self.text = selectedItem;
-                [self.timePicker setDate:date animated:animated];
-                
-                if ([self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
-                    [self.delegate textField:self didSelectItem:_selectedItem];
+                return  [super.text length]  ?   [self.timePicker.date copy]    :   nil;    break;
             }
-            else if([selectedItem length])
+            else
             {
-                NSLog(@"Invalid time or time format:%@",selectedItem);
+                return [self.timePicker.date copy];
             }
-            break;
         }
+        case IQDropDownModeDateTimePicker:
+        {
+            if (self.isOptionalDropDown)
+            {
+                return  [super.text length]  ?   [self.dateTimePicker.date copy]    :   nil;    break;
+            }
+            else
+            {
+                return [self.dateTimePicker.date copy];
+            }
+        }
+        default:                        return  nil;                     break;
     }
+}
+
+-(void)setDate:(NSDate *)date
+{
+    [self setDate:date animated:NO];
+}
+
+- (void)setDate:(NSDate *)date animated:(BOOL)animated
+{
+    switch (self.dropDownMode)
+    {
+        case IQDropDownModeDatePicker:
+            [self _setSelectedItem:[self.dateFormatter stringFromDate:date] animated:animated shouldNotifyDelegate:NO];
+            break;
+        case IQDropDownModeTimePicker:
+            [self _setSelectedItem:[self.timeFormatter stringFromDate:date] animated:animated shouldNotifyDelegate:NO];
+            break;
+        case IQDropDownModeDateTimePicker:
+            [self _setSelectedItem:[self.dateTimeFormatter stringFromDate:date] animated:animated shouldNotifyDelegate:NO];
+            break;
+        default:
+            break;
+    }
+}
+
+-(NSDateComponents *)dateComponents
+{
+    return [[NSCalendar currentCalendar] components:kCFCalendarUnitDay | kCFCalendarUnitMonth | kCFCalendarUnitYear fromDate:self.date];
+}
+
+- (NSInteger)year   {   return [[self dateComponents] year];    }
+- (NSInteger)month  {   return [[self dateComponents] month];   }
+- (NSInteger)day    {   return [[self dateComponents] day];     }
+- (NSInteger)hour   {   return [[self dateComponents] hour];    }
+- (NSInteger)minute {   return [[self dateComponents] minute];  }
+- (NSInteger)second {   return [[self dateComponents] second];  }
+
+-(UIDatePickerMode)datePickerMode
+{
+    NSNumber *datePickerMode = objc_getAssociatedObject(self, @selector(datePickerMode));
+    return [datePickerMode integerValue];
 }
 
 - (void)setDatePickerMode:(UIDatePickerMode)datePickerMode
 {
+<<<<<<< HEAD
     if (_dropDownMode == IQDropDownModeDatePicker || _dropDownMode == IQDropDownModeDateTimePicker)
     {
         _datePickerMode = datePickerMode;
         
+=======
+    if (self.dropDownMode == IQDropDownModeDatePicker)
+    {
+        objc_setAssociatedObject(self, @selector(datePickerMode), @(datePickerMode), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        
+        [self.datePicker setDatePickerMode:datePickerMode];
+>>>>>>> upstream/master
         
         switch (datePickerMode) {
             case UIDatePickerModeCountDownTimer:
-                [self.dropDownDateFormatter setDateStyle:NSDateFormatterNoStyle];
-                [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
+                [self.dateFormatter setDateStyle:NSDateFormatterNoStyle];
+                [self.dateFormatter setTimeStyle:NSDateFormatterNoStyle];
                 break;
             case UIDatePickerModeDate:
+<<<<<<< HEAD
                 [self.datePicker setDatePickerMode:datePickerMode];
                 [self.dropDownDateFormatter setDateStyle:NSDateFormatterShortStyle];
                 [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
@@ -433,58 +902,253 @@
                 [self.dateTimePicker setDatePickerMode:datePickerMode];
                 [self.dropDownDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
                 [self.dropDownDateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
+=======
+                [self.dateFormatter setDateStyle:NSDateFormatterShortStyle];
+                [self.dateFormatter setTimeStyle:NSDateFormatterNoStyle];
+                break;
+            case UIDatePickerModeTime:
+                [self.timeFormatter setDateStyle:NSDateFormatterNoStyle];
+                [self.timeFormatter setTimeStyle:NSDateFormatterShortStyle];
+                break;
+            case UIDatePickerModeDateAndTime:
+                [self.dateTimeFormatter setDateStyle:NSDateFormatterShortStyle];
+                [self.dateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
+>>>>>>> upstream/master
                 break;
         }
     }
 }
 
--(void)setMinimumDate:(NSDate *)minimumDate
+-(NSDateFormatter *)dateFormatter
 {
-    _minimumDate = minimumDate;
+    NSDateFormatter *dateFormatter = objc_getAssociatedObject(self, @selector(dateFormatter));
     
+<<<<<<< HEAD
     self.datePicker.minimumDate = minimumDate;
     self.timePicker.minimumDate = minimumDate;
     self.dateTimePicker.minimumDate = minimumDate;
+=======
+    if (!dateFormatter) {
+        
+        if ([[IQDropDownTextField appearance] dateFormatter])
+        {
+            dateFormatter = [[IQDropDownTextField appearance] dateFormatter];
+        }
+        else
+        {
+            static NSDateFormatter *defaultDateFormatter = nil;
+            
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                defaultDateFormatter = [[NSDateFormatter alloc] init];
+                [defaultDateFormatter setDateStyle:NSDateFormatterMediumStyle];
+                [defaultDateFormatter setTimeStyle:NSDateFormatterNoStyle];
+            });
+            
+            dateFormatter = defaultDateFormatter;
+        }
+    }
+    
+    return dateFormatter;
+>>>>>>> upstream/master
 }
 
--(void)setMaximumDate:(NSDate *)maximumDate
+-(void)setDateFormatter:(NSDateFormatter *)dateFormatter
 {
+<<<<<<< HEAD
     _maximumDate = maximumDate;
     
     self.datePicker.maximumDate = maximumDate;
     self.timePicker.maximumDate = maximumDate;
     self.dateTimePicker.maximumDate = maximumDate;
+=======
+    objc_setAssociatedObject(self, @selector(dateFormatter), dateFormatter, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self.datePicker setLocale:dateFormatter.locale];
+>>>>>>> upstream/master
 }
 
--(void)setIsOptionalDropDown:(BOOL)isOptionalDropDown
+-(NSDateFormatter *)timeFormatter
 {
-    _isOptionalDropDown = isOptionalDropDown;
+    NSDateFormatter *timeFormatter = objc_getAssociatedObject(self, @selector(timeFormatter));
     
-    if (_isOptionalDropDown)
+    if (!timeFormatter)
     {
-        NSArray *array = @[@"Select"];
-        _ItemListsInternal = [array arrayByAddingObjectsFromArray:_itemList];
-    }
-    else
-    {
-        _ItemListsInternal = [_itemList copy];
+        if ([[IQDropDownTextField appearance] timeFormatter])
+        {
+            timeFormatter = [[IQDropDownTextField appearance] timeFormatter];
+        }
+        else
+        {
+            static NSDateFormatter *defaultTimeFormatter = nil;
+            
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                defaultTimeFormatter = [[NSDateFormatter alloc] init];
+                [defaultTimeFormatter setDateStyle:NSDateFormatterNoStyle];
+                [defaultTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
+            });
+            
+            timeFormatter = defaultTimeFormatter;
+        }
     }
     
-    [self.pickerView reloadAllComponents];
+    return timeFormatter;
 }
 
-#pragma mark - Getter
-
--(NSDateComponents *)dateComponents
+-(void)setTimeFormatter:(NSDateFormatter *)timeFormatter
 {
-    return [[NSCalendar currentCalendar] components:NSCalendarUnitDay | NSCalendarUnitMonth | NSCalendarUnitYear fromDate:self.date];
+    objc_setAssociatedObject(self, @selector(timeFormatter), timeFormatter, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self.timePicker setLocale:timeFormatter.locale];
 }
 
-- (NSInteger)year   {   return [[self dateComponents] year];    }
-- (NSInteger)month  {   return [[self dateComponents] month];   }
-- (NSInteger)day    {   return [[self dateComponents] day];     }
-- (NSInteger)hour   {   return [[self dateComponents] hour];    }
-- (NSInteger)minute {   return [[self dateComponents] minute];  }
-- (NSInteger)second {   return [[self dateComponents] second];  }
+-(NSDateFormatter *)dateTimeFormatter
+{
+    NSDateFormatter *dateTimeFormatter = objc_getAssociatedObject(self, @selector(dateTimeFormatter));
+    
+    if (!dateTimeFormatter) {
+        if ([[IQDropDownTextField appearance] dateTimeFormatter])
+        {
+            dateTimeFormatter = [[IQDropDownTextField appearance] dateTimeFormatter];
+        }
+        else
+        {
+            static NSDateFormatter *defaultDateTimeFormatter = nil;
+            
+            static dispatch_once_t onceToken;
+            dispatch_once(&onceToken, ^{
+                defaultDateTimeFormatter = [[NSDateFormatter alloc] init];
+                [defaultDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
+                [defaultDateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
+            });
+            
+            dateTimeFormatter = defaultDateTimeFormatter;
+        }
+    }
+    
+    return dateTimeFormatter;
+}
+
+-(void)setDateTimeFormatter:(NSDateFormatter *)dateTimeFormatter
+{
+    objc_setAssociatedObject(self, @selector(dateTimeFormatter), dateTimeFormatter, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    [self.dateTimePicker setLocale:dateTimeFormatter.locale];
+}
+
+@end
+
+
+@implementation IQDropDownTextField (Internal)
+
+-(NSArray *)internalItemList
+{
+    return objc_getAssociatedObject(self, @selector(internalItemList));
+}
+
+-(void)setInternalItemList:(NSArray *)internalItemList
+{
+    objc_setAssociatedObject(self, @selector(internalItemList), internalItemList, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+-(void)_setSelectedItem:(NSString *)selectedItem animated:(BOOL)animated shouldNotifyDelegate:(BOOL)shouldNotifyDelegate
+{
+    switch (self.dropDownMode)
+    {
+        case IQDropDownModeTextPicker:
+        {
+            if ([self.internalItemList containsObject:selectedItem])
+            {
+                [self setSelectedRow:[self.internalItemList indexOfObject:selectedItem] animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
+                    [self.delegate textField:self didSelectItem:selectedItem];
+            }
+            else if (self.isOptionalDropDown)
+            {
+                [self setSelectedRow:IQOptionalTextFieldIndex animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectItem:)])
+                    [self.delegate textField:self didSelectItem:nil];
+            }
+        }
+            break;
+        case IQDropDownModeDatePicker:
+        {
+            NSDate *date = [self.dateFormatter dateFromString:selectedItem];
+            if (date)
+            {
+                super.text = selectedItem;
+                [self.datePicker setDate:date animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:date];
+            }
+            else if (self.isOptionalDropDown && [selectedItem length] == 0)
+            {
+                super.text = @"";
+                [self.datePicker setDate:[NSDate date] animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:nil];
+            }
+            break;
+        }
+        case IQDropDownModeTimePicker:
+        {
+            NSDate *time = [self.timeFormatter dateFromString:selectedItem];
+            
+            if (time)
+            {
+                NSDate *day = [NSDate dateWithTimeIntervalSinceReferenceDate: 0];
+                NSDateComponents *componentsDay = [[NSCalendar currentCalendar] components: NSCalendarUnitEra | NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay fromDate: day];
+                NSDateComponents *componentsTime = [[NSCalendar currentCalendar] components: NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate: time];
+                componentsDay.hour = componentsTime.hour;
+                componentsDay.minute = componentsTime.minute;
+                componentsDay.second = componentsTime.second;
+                
+                NSDate *date = [[NSCalendar currentCalendar] dateFromComponents: componentsDay];
+                
+                super.text = selectedItem;
+                [self.timePicker setDate:date animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:date];
+            }
+            else if (self.isOptionalDropDown && [selectedItem length] == 0)
+            {
+                super.text = @"";
+                [self.timePicker setDate:[NSDate date] animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:nil];
+            }
+            break;
+        }
+        case IQDropDownModeDateTimePicker:
+        {
+            NSDate *date = [self.dateTimeFormatter dateFromString:selectedItem];
+            if (date)
+            {
+                super.text = selectedItem;
+                [self.dateTimePicker setDate:date animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:date];
+            }
+            else if (self.isOptionalDropDown && [selectedItem length] == 0)
+            {
+                super.text = @"";
+                [self.dateTimePicker setDate:[NSDate date] animated:animated];
+                
+                if (shouldNotifyDelegate && [self.delegate respondsToSelector:@selector(textField:didSelectDate:)])
+                    [self.delegate textField:self didSelectDate:nil];
+            }
+            break;
+        }
+        case IQDropDownModeTextField:{
+            super.text = selectedItem;
+        }
+            break;
+    }
+}
 
 @end
