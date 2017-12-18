@@ -40,10 +40,6 @@ typedef NS_ENUM(NSInteger, IQDropDownMode) {
     IQDropDownModeTextPicker,
     IQDropDownModeTimePicker,
     IQDropDownModeDatePicker,
-<<<<<<< HEAD
-    
-    IQDropDownModeDateTimePicker,
-=======
     IQDropDownModeDateTimePicker,
     IQDropDownModeTextField
 };
@@ -52,7 +48,6 @@ typedef NS_ENUM(NSInteger, IQProposedSelection) {
     IQProposedSelectionBoth,
     IQProposedSelectionAbove,
     IQProposedSelectionBelow
->>>>>>> upstream/master
 };
 
 

@@ -29,20 +29,9 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
 
 @interface IQDropDownTextField () <UIPickerViewDelegate, UIPickerViewDataSource>
 
-<<<<<<< HEAD
-@property (nonatomic, strong) UIPickerView *pickerView;
-@property (nonatomic, strong) UIDatePicker *datePicker;
-@property (nonatomic, strong) UIDatePicker *timePicker;
-@property (nonatomic, strong) UIDatePicker *dateTimePicker;
-@property (nonatomic, strong) NSDateFormatter *dropDownDateFormatter;
-@property (nonatomic, strong) NSDateFormatter *dropDownDateTimeFormatter;
-@property (nonatomic, strong) NSDateFormatter *dropDownTimeFormatter;
-=======
 @property (nonatomic, strong) UIToolbar *dismissToolbar;
 
 @property BOOL hasSetInitialIsOptional;
->>>>>>> upstream/master
-
 @end
 
 
@@ -107,43 +96,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
         self.isOptionalDropDown = self.hasSetInitialIsOptional?self.isOptionalDropDown:YES;
         self.adjustPickerLabelFontSizeWidth = self.adjustPickerLabelFontSizeWidth;
     }
-<<<<<<< HEAD
-    
-    self.dropDownDateTimeFormatter = [[NSDateFormatter alloc] init];
-    [self.dropDownDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
-    [self.dropDownDateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
-    
-    
-    self.dropDownTimeFormatter = [[NSDateFormatter alloc] init];
-    [self.dropDownTimeFormatter setDateStyle:NSDateFormatterNoStyle];
-    [self.dropDownTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
-    
-    self.pickerView = [[UIPickerView alloc] init];
-    [self.pickerView setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
-    [self.pickerView setShowsSelectionIndicator:YES];
-    [self.pickerView setDelegate:self];
-    [self.pickerView setDataSource:self];
-    
-    self.datePicker = [[UIDatePicker alloc] init];
-    [self.datePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
-    [self.datePicker setDatePickerMode:UIDatePickerModeDate];
-    [self.datePicker addTarget:self action:@selector(dateChanged:) forControlEvents:UIControlEventValueChanged];
-    
-    self.timePicker = [[UIDatePicker alloc] init];
-    [self.timePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
-    [self.timePicker setDatePickerMode:UIDatePickerModeTime];
-    [self.timePicker addTarget:self action:@selector(timeChanged:) forControlEvents:UIControlEventValueChanged];
-    
-    
-    self.dateTimePicker = [[UIDatePicker alloc] init];
-    [self.dateTimePicker setAutoresizingMask:(UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight)];
-    [self.dateTimePicker setDatePickerMode:UIDatePickerModeDateAndTime];
-    [self.dateTimePicker addTarget:self action:@selector(dateTimeChanged:) forControlEvents:UIControlEventValueChanged];
-    
-    [self setDropDownMode:IQDropDownModeTextPicker];
-    [self setIsOptionalDropDown:YES];
-=======
->>>>>>> upstream/master
 }
 
 - (instancetype)initWithFrame:(CGRect)frame
@@ -200,7 +152,8 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
     }
     else
     {
-<<<<<<< HEAD
+        UILabel *labelText = (UILabel*)view;
+        
         /* WORKAROUND  FSO
          * We need to find a point to select the default option to the control, if we select the default opcion
          * before the picker view is showed, the textbox will show that opcion as default, and we need the field empty
@@ -219,11 +172,8 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
         {
             [self setSelectedItem:_ItemListsInternal[0]];
         }
+        //END FSO
         
-        labelText.font = [UIFont boldSystemFontOfSize:20.0];
-        labelText.textColor = [UIColor blackColor];
-=======
-        UILabel *labelText = (UILabel*)view;
         
         if (labelText == nil)
         {
@@ -232,6 +182,11 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
             [labelText setAdjustsFontSizeToFitWidth:YES];
             labelText.backgroundColor = [UIColor clearColor];
             labelText.backgroundColor = [UIColor clearColor];
+        }else{
+            //FSO
+            labelText.font = [UIFont boldSystemFontOfSize:20.0];
+            labelText.textColor = [UIColor blackColor];
+            //END FSO
         }
         
         NSString *text = [self.internalItemList objectAtIndex:row];
@@ -282,7 +237,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
             labelText.adjustsFontSizeToFitWidth = self.adjustPickerLabelFontSizeWidth;
         }
         return labelText;
->>>>>>> upstream/master
     }
 }
 
@@ -495,8 +449,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
     //Refreshing pickerView
     [self setIsOptionalDropDown:_isOptionalDropDown];
     
-<<<<<<< HEAD
-=======
     [self setSelectedRow:self.selectedRow];
 }
 
@@ -564,26 +516,11 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
 {
     if (_optionalItemText.length)
     {
-<<<<<<< HEAD
-        case IQDropDownModeDatePicker:
-            return  [self.text length]  ?   self.datePicker.date    :   nil;
-            break;
-        case IQDropDownModeTimePicker:
-            return  [self.text length]  ?   self.timePicker.date    :   nil;
-            break;
-        case IQDropDownModeDateTimePicker:
-            return  [self.text length]  ?   self.dateTimePicker.date    :   nil;
-            break;
-        default:
-            return  nil;
-            break;
-=======
         return _optionalItemText;
     }
     else
     {
         return NSLocalizedString(@"Select", nil);
->>>>>>> upstream/master
     }
 }
 
@@ -708,17 +645,7 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
     return _timePicker;
 }
 
-<<<<<<< HEAD
-- (void)setDateTimeFormatter:(NSDateFormatter *)userDateTimeFormatter
-{
-    self.dropDownDateTimeFormatter = userDateTimeFormatter;
-    [self.dateTimePicker setLocale:self.dropDownDateTimeFormatter.locale];
-}
-
--(void)setSelectedItem:(NSString *)selectedItem
-=======
 - (UIDatePicker *) dateTimePicker
->>>>>>> upstream/master
 {
     UIDatePicker *_dateTimePicker = objc_getAssociatedObject(self, _cmd);
     
@@ -869,18 +796,12 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
 
 - (void)setDatePickerMode:(UIDatePickerMode)datePickerMode
 {
-<<<<<<< HEAD
-    if (_dropDownMode == IQDropDownModeDatePicker || _dropDownMode == IQDropDownModeDateTimePicker)
-    {
-        _datePickerMode = datePickerMode;
-        
-=======
+
     if (self.dropDownMode == IQDropDownModeDatePicker)
     {
         objc_setAssociatedObject(self, @selector(datePickerMode), @(datePickerMode), OBJC_ASSOCIATION_RETAIN_NONATOMIC);
         
         [self.datePicker setDatePickerMode:datePickerMode];
->>>>>>> upstream/master
         
         switch (datePickerMode) {
             case UIDatePickerModeCountDownTimer:
@@ -888,21 +809,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
                 [self.dateFormatter setTimeStyle:NSDateFormatterNoStyle];
                 break;
             case UIDatePickerModeDate:
-<<<<<<< HEAD
-                [self.datePicker setDatePickerMode:datePickerMode];
-                [self.dropDownDateFormatter setDateStyle:NSDateFormatterShortStyle];
-                [self.dropDownDateFormatter setTimeStyle:NSDateFormatterNoStyle];
-                break;
-            case UIDatePickerModeTime:
-                [self.timePicker setDatePickerMode:datePickerMode];
-                [self.dropDownTimeFormatter setDateStyle:NSDateFormatterNoStyle];
-                [self.dropDownTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
-                break;
-            case UIDatePickerModeDateAndTime:
-                [self.dateTimePicker setDatePickerMode:datePickerMode];
-                [self.dropDownDateTimeFormatter setDateStyle:NSDateFormatterMediumStyle];
-                [self.dropDownDateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
-=======
                 [self.dateFormatter setDateStyle:NSDateFormatterShortStyle];
                 [self.dateFormatter setTimeStyle:NSDateFormatterNoStyle];
                 break;
@@ -913,7 +819,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
             case UIDatePickerModeDateAndTime:
                 [self.dateTimeFormatter setDateStyle:NSDateFormatterShortStyle];
                 [self.dateTimeFormatter setTimeStyle:NSDateFormatterShortStyle];
->>>>>>> upstream/master
                 break;
         }
     }
@@ -923,11 +828,6 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
 {
     NSDateFormatter *dateFormatter = objc_getAssociatedObject(self, @selector(dateFormatter));
     
-<<<<<<< HEAD
-    self.datePicker.minimumDate = minimumDate;
-    self.timePicker.minimumDate = minimumDate;
-    self.dateTimePicker.minimumDate = minimumDate;
-=======
     if (!dateFormatter) {
         
         if ([[IQDropDownTextField appearance] dateFormatter])
@@ -950,21 +850,12 @@ NSInteger const IQOptionalTextFieldIndex =  -1;
     }
     
     return dateFormatter;
->>>>>>> upstream/master
 }
 
 -(void)setDateFormatter:(NSDateFormatter *)dateFormatter
 {
-<<<<<<< HEAD
-    _maximumDate = maximumDate;
-    
-    self.datePicker.maximumDate = maximumDate;
-    self.timePicker.maximumDate = maximumDate;
-    self.dateTimePicker.maximumDate = maximumDate;
-=======
     objc_setAssociatedObject(self, @selector(dateFormatter), dateFormatter, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     [self.datePicker setLocale:dateFormatter.locale];
->>>>>>> upstream/master
 }
 
 -(NSDateFormatter *)timeFormatter
